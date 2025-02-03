@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eventos - Ciudad Autónoma de Melilla</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background-color: #0073e6;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            box-shadow: 0px 2px 5px rgba(0,0,0,0.2);
+        }
+        .content {
+            margin-top: 70px;
+            padding: 20px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .event-card {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .event-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .event-info {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+        .button {
+            padding: 10px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            flex: 1;
+            margin: 5px;
+        }
+        .like { background: #4CAF50; color: white; }
+        .dislike { background: #f44336; color: white; }
+        .info { background: #0073e6; color: white; width: 100%; margin-top: 10px; }
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: white;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0px -2px 5px rgba(0,0,0,0.2);
+        }
+        .chat-button {
+            background: #0073e6;
+            color: white;
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">Ciudad Autónoma de Melilla</div>
+
+    <div class="content" id="events-container"></div>
+
+    <div class="footer">
+        <button class="chat-button">CHAT</button>
+    </div>
+
+    <script>
+        const events = [
+            { title: "Concierto de Jazz", date: "10 Nov 2024", time: "19:00", location: "Auditorio Central" },
+            { title: "Feria del Libro", date: "15 Nov 2024", time: "10:00", location: "Plaza Mayor" },
+            { title: "Obra de Teatro: Hamlet", date: "20 Nov 2024", time: "20:30", location: "Teatro Principal" }
+        ];
+
+        const container = document.getElementById("events-container");
+
+        events.forEach(event => {
+            const card = document.createElement("div");
+            card.className = "event-card";
+            card.innerHTML = `
+                <div class="event-title">${event.title}</div>
+                <div class="event-info">📅 ${event.date} | ⏰ ${event.time} | 📍 ${event.location}</div>
+                <div class="buttons">
+                    <button class="button like">👍 Me gusta</button>
+                    <button class="button dislike">👎 No me gusta</button>
+                </div>
+                <button class="button info">Más Información</button>
+            `;
+            container.appendChild(card);
+        });
+    </script>
+
+</body>
+</html>
