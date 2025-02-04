@@ -4,22 +4,87 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eventos del Cluster</title>
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <h2>Eventos del Cluster</h2>
-    <div id="calendar"></div>
+<body class="bg-gray-100 text-gray-900">
+
+    <div class="max-w-2xl mx-auto py-6 px-4">
+        <h1 class="text-2xl font-bold text-center mb-4">📅 Eventos del Cluster</h1>
+        <ul id="event-list" class="space-y-4"></ul>
+    </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var calendarEl = document.getElementById('calendar');
-            var calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                events: `https://www.googleapis.com/calendar/v3/calendars/TU_CALENDAR_ID/events?key=TU_API_KEY`
-            });
-            calendar.render();
-        });
+        const API_KEY = 'AIzaSyBO1SRDN5iz2HJC5Ozz_-GBjpzX92z83QA';
+        const CALENDAR_ID = 'info@clustermelilla.es';
+        const url = `https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events?key=${API_KEY}&orderBy=startTime&singleEvents=true`;
+
+        async function fetchEvents() {
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                const events = data.items || [];
+
+                if (events.length === 0) {
+                    document.getElementById('event-list').innerHTML = '<p class="text-center text-gray-500">No hay eventos próximos.</p>';
+                    return;
+                }
+
+                const colors = ['blue', 'green', 'purple', 'red', 'yellow'];
+                const eventList = document.getElementById('event-list');
+
+                eventList.innerHTML = events.map((event, index) => {
+                    const startDate = new Date(event.start.dateTime || event.start.date);
+                    const endDate = event.end ? new Date(event.end.dateTime || event.end.date) : null;
+
+                    const formattedStart = startDate.toLocaleDateString("es-ES", { 
+                        weekday: 'short', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' 
+                    });
+                    
+                    const formattedEnd = endDate ? endDate.toLocaleDateString("es-ES", { 
+                        weekday: 'short', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' 
+                    }) : '';
+
+                    const color = colors[index % colors.length]; // Alternar colores
+
+                    return `
+                        <li class="bg-white p-4 rounded-lg shadow flex flex-col space-y-2 border-l-4 border-${color}-500">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-lg">${event.summary}</h3>
+                                    <p class="text-sm text-gray-600">
+                                        📆 <span class="font-medium">${formattedStart}</span>
+                                        ${formattedEnd ? ` - <span class="font-medium">${formattedEnd}</span>` : ""}
+                                    </p>
+                                    ${event.location ? `<p class="text-gray-500 text-sm">📍 ${event.location}</p>` : ""}
+                                </div>
+                                <button onclick="toggleDescription(${index})" 
+                                    class="bg-${color}-500 text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-${color}-600 transition">
+                                    ℹ️
+                                </button>
+                            </div>
+                            <div id="desc-${index}" class="hidden bg-gray-100 p-3 rounded mt-2">
+                                <p class="text-gray-700">${event.description || "No hay descripción disponible."}</p>
+                                <a href="${event.htmlLink}" target="_blank" 
+                                    class="text-${color}-600 underline text-sm mt-2 inline-block">
+                                    Ver en Google Calendar
+                                </a>
+                            </div>
+                        </li>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error obteniendo eventos:', error);
+                document.getElementById('event-list').innerHTML = '<p class="text-center text-red-500">Error al cargar eventos.</p>';
+            }
+        }
+
+        function toggleDescription(index) {
+            const desc = document.getElementById(`desc-${index}`);
+            desc.classList.toggle('hidden');
+        }
+
+        fetchEvents();
     </script>
+
 </body>
 </html>
