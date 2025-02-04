@@ -38,6 +38,16 @@
   </style>
 </head>
 <body class="bg-light">
+  <div id="navbar-container"></div>
+<script>
+  fetch("navbar.html")
+    .then(response => response.text())
+    .then(data => {
+      document.getElementById("navbar-container").innerHTML = data;
+    })
+    .catch(error => console.error("Error al cargar la barra de navegación:", error));
+</script>
+
   <div class="container mt-4">
     <h1 class="text-center">Reserva de Puestos en Coworking</h1>
     <p class="text-center">Selecciona tu fecha y elige un puesto disponible.</p>
@@ -100,32 +110,37 @@
         return;
       }
       
-      const requestBody = JSON.stringify({ user, email, spaceId: parseInt(puesto, 10), date, turno });
+      const requestBody = JSON.stringify({ 
+        user, 
+        email, 
+        spaceId: parseInt(puesto, 10), 
+        date, 
+        turno 
+      });
+
       console.log("Enviando solicitud:", requestBody);
       
       fetch('/api/reservations', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: requestBody
-})
-.then(response => {
-  if (!response.ok) {
-    return response.json().then(err => { 
-      throw new Error(err.error || 'Error desconocido en el servidor.'); 
-    });
-  }
-  return response.json();
-})
-.then(data => {
-  const messageDiv = document.getElementById('message');
-  messageDiv.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
-  updateAvailability();
-})
-.catch(error => {
-  console.error("Error en la reserva:", error.message); // Mostrar error detallado
-  const messageDiv = document.getElementById('message');
-  messageDiv.innerHTML = `<div class="alert alert-danger">${error.message}</div>`;
-});
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: requestBody
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => { throw new Error(err.error || 'Error desconocido en el servidor.'); });
+        }
+        return response.json();
+      })
+      .then(data => {
+        const messageDiv = document.getElementById('message');
+        messageDiv.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+        updateAvailability();
+      })
+      .catch(error => {
+        console.error("Error en la reserva:", error);
+        const messageDiv = document.getElementById('message');
+        messageDiv.innerHTML = `<div class="alert alert-danger">${error.message}</div>`;
+      });
     }
   </script>
 </body>
