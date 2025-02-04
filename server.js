@@ -33,35 +33,59 @@ app.get('/api/spaces', (req, res) => {
 
 // Endpoint para crear una reserva y guardarla en la base de datos
 app.post('/api/reservations', async (req, res) => {
-  const { spaceId, date, turn, user } = req.body;
-
-  // Validación básica de los datos
-  if (!spaceId || !date || !turn || !user) {
-    return res.status(400).json({ error: 'Faltan datos en la reserva.' });
-  }
-
   try {
-    // Convertimos la fecha a objeto Date (suponiendo que se recibe en formato YYYY-MM-DD)
-    const reservationDate = new Date(date);
+    console.log('Datos recibidos en el servidor:', req.body);
 
-    // Verifica si ya existe una reserva para ese espacio, turno y día
+    const { spaceId, date, turno, user } = req.body;
+
+    // Validación básica de los datos
+    if (!spaceId || !date || !turno || !user) {
+      return res.status(400).json({ error: 'Faltan datos obligatorios en la reserva.' });
+    }
+
+    // Validar el formato del ID del espacio
+    if (isNaN(parseInt(spaceId))) {
+      return res.status(400).json({ error: 'El ID del espacio debe ser un número.' });
+    }
+
+    // Validar el formato de la fecha
+    const reservationDate = new Date(date);
+    if (isNaN(reservationDate.getTime())) {
+      return res.status(400).json({ error: 'La fecha no tiene un formato válido.' });
+    }
+
+    // Validar que el turno sea correcto
+    if (turno !== 'mañana' && turno !== 'tarde') {
+      return res.status(400).json({ error: 'El turno debe ser "mañana" o "tarde".' });
+    }
+
+    // Verificar si ya existe una reserva para ese espacio, turno y día
     const existingReservation = await Reservation.findOne({
-      spaceId,
-      turn,
-      date: reservationDate
+      spaceId: parseInt(spaceId),
+      turno,
+      date: reservationDate.toISOString().split('T')[0], // Normalizar fecha al formato YYYY-MM-DD
     });
 
     if (existingReservation) {
-      return res.status(400).json({ error: 'Ya existe una reserva para este spot, turno y día.' });
+      return res.status(400).json({ error: 'Ya existe una reserva para este espacio, turno y día.' });
     }
 
-    // Crear y guardar la nueva reserva en Cosmos DB
-    const newReservation = new Reservation({ spaceId, date: reservationDate, turn, user });
+    // Crear y guardar la nueva reserva
+    const newReservation = new Reservation({
+      spaceId: parseInt(spaceId),
+      date: reservationDate.toISOString().split('T')[0],
+      turno,
+      user,
+    });
+
     const savedReservation = await newReservation.save();
-    res.status(201).json({ message: 'Reserva creada', reservation: savedReservation });
+
+    console.log('Reserva creada con éxito:', savedReservation);
+
+    res.status(201).json({ message: 'Reserva creada con éxito', reservation: savedReservation });
   } catch (error) {
-    console.error("Error al crear reserva:", error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    console.error('Error interno al crear la reserva:', error);
+    res.status(500).json({ error: 'Error interno del servidor.' });
   }
 });
 

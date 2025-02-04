@@ -77,20 +77,12 @@
           let html = '<h3 class="mt-4">Mañana</h3><div class="d-flex flex-wrap justify-content-center">';
           for (let puesto = 1; puesto <= 6; puesto++) {
             const reservadoManana = data.some(r => r.spaceId == puesto && r.turno === 'mañana');
-            if (reservadoManana) {
-              html += `<div class="puesto-reservado m-2">Puesto ${puesto}</div>`;
-            } else {
-              html += `<div class="puesto-manana m-2" onclick="selectPuesto(${puesto}, 'mañana')">Puesto ${puesto}</div>`;
-            }
+            html += reservadoManana ? `<div class="puesto-reservado m-2">Puesto ${puesto}</div>` : `<div class="puesto-manana m-2" onclick="selectPuesto(${puesto}, 'mañana')">Puesto ${puesto}</div>`;
           }
           html += '</div><h3 class="mt-4">Tarde</h3><div class="d-flex flex-wrap justify-content-center">';
           for (let puesto = 1; puesto <= 6; puesto++) {
             const reservadoTarde = data.some(r => r.spaceId == puesto && r.turno === 'tarde');
-            if (reservadoTarde) {
-              html += `<div class="puesto-reservado m-2">Puesto ${puesto}</div>`;
-            } else {
-              html += `<div class="puesto-tarde m-2" onclick="selectPuesto(${puesto}, 'tarde')">Puesto ${puesto}</div>`;
-            }
+            html += reservadoTarde ? `<div class="puesto-reservado m-2">Puesto ${puesto}</div>` : `<div class="puesto-tarde m-2" onclick="selectPuesto(${puesto}, 'tarde')">Puesto ${puesto}</div>`;
           }
           html += '</div>';
           document.getElementById('availability').innerHTML = html;
@@ -99,29 +91,41 @@
     }
 
     function selectPuesto(puesto, turno) {
-      const user = document.getElementById('user').value;
-      const email = document.getElementById('email').value;
-      const date = document.getElementById('date').value;
-      if (!user || !email || !date) {
+      const user = document.getElementById('user').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const date = document.getElementById('date').value.trim();
+      
+      if (!user || !email || !date || !turno || !puesto) {
         alert('Por favor, completa todos los campos antes de reservar.');
         return;
       }
+      
+      const requestBody = JSON.stringify({ user, email, spaceId: parseInt(puesto, 10), date, turno });
+      console.log("Enviando solicitud:", requestBody);
+      
       fetch('/api/reservations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user, email, spaceId: puesto, date, turno })
-      })
-      .then(response => response.json())
-      .then(data => {
-        const messageDiv = document.getElementById('message');
-        if (data.error) {
-          messageDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
-        } else {
-          messageDiv.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
-          updateAvailability();
-        }
-      })
-      .catch(error => console.error('Error:', error));
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: requestBody
+})
+.then(response => {
+  if (!response.ok) {
+    return response.json().then(err => { 
+      throw new Error(err.error || 'Error desconocido en el servidor.'); 
+    });
+  }
+  return response.json();
+})
+.then(data => {
+  const messageDiv = document.getElementById('message');
+  messageDiv.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+  updateAvailability();
+})
+.catch(error => {
+  console.error("Error en la reserva:", error.message); // Mostrar error detallado
+  const messageDiv = document.getElementById('message');
+  messageDiv.innerHTML = `<div class="alert alert-danger">${error.message}</div>`;
+});
     }
   </script>
 </body>

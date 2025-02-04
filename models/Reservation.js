@@ -1,11 +1,13 @@
 // models/Reservation.js
 const mongoose = require('mongoose');
 
-const ReservationSchema = new mongoose.Schema({
+const reservationSchema = new mongoose.Schema({
   spaceId: { type: Number, required: true },
-  date: { type: Date, required: true },
-  turn: { type: String, enum: ['mañana', 'tarde'], required: true }, // nuevo campo
+  date: { type: String, required: true },
+  turno: { type: String, required: true, enum: ['mañana', 'tarde'] }, // Cambiado a "turno"
   user: { type: String, required: true }
-}, { timestamps: true });
+});
 
-module.exports = mongoose.model('Reservation', ReservationSchema);
+const Reservation = mongoose.model('Reservation', reservationSchema);
+
+module.exports = Reservation;
