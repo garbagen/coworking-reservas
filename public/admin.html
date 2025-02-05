@@ -5,120 +5,121 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Panel de Gestión - Reservas</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <style>
-    /* Estilos para botones y mensajes */
-    .btn {
-      margin: 0 2px;
+    body {
+      background-color: #f8f9fa;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .btn { margin: 0 2px; }
+    h1, h2 { text-align: center; color: #007bff; }
+    .table {
+      margin-top: 20px;
+    }
+    #loginContainer {
+      max-width: 400px;
+      margin: 50px auto;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    .sortable:hover {
+      cursor: pointer;
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
-  <div class="container mt-4">
+  <div id="loginContainer" class="container mt-4">
+    <h2>Iniciar Sesión</h2>
+    <div class="mb-3">
+      <label>Usuario:</label>
+      <input type="text" id="adminUser" class="form-control">
+    </div>
+    <div class="mb-3">
+      <label>Contraseña:</label>
+      <input type="password" id="adminPassword" class="form-control">
+    </div>
+    <button class="btn btn-primary w-100" onclick="login()">Acceder</button>
+  </div>
+
+  <div class="container mt-4" id="reservationsContainer" style="display:none;">
     <h1>Gestión de Reservas</h1>
-    <table class="table">
-      <thead>
+    <button class="btn btn-secondary mb-3" onclick="loadReservations()">🔄 Actualizar</button>
+    <table class="table table-hover table-bordered">
+      <thead class="table-dark">
         <tr>
-          <th>ID</th>
-          <th>Spot</th>
-          <th>Fecha</th>
-          <th>Turno</th>
-          <th>Usuario</th>
+          <th class="sortable" onclick="sortTable(0)">ID</th>
+          <th class="sortable" onclick="sortTable(1)">Spot</th>
+          <th class="sortable" onclick="sortTable(2, true)">Fecha</th>
+          <th class="sortable" onclick="sortTable(3)">Turno</th>
+          <th class="sortable" onclick="sortTable(4)">Usuario</th>
           <th>Acciones</th>
         </tr>
       </thead>
-      <tbody id="reservationsTable">
-        <!-- Las reservas se cargarán aquí -->
-      </tbody>
+      <tbody id="reservationsTable"></tbody>
     </table>
   </div>
-  
+
   <script>
-    // Solicitar credenciales de admin (se solicitan al cargar la página)
-    const username = prompt("Introduce el usuario admin:").trim();
-    const password = prompt("Introduce la contraseña admin:").trim();
-    
-    // Prepara el header de autorización
-    const authHeader = "Basic " + btoa(username + ":" + password);
-    
-    // Función para cargar reservas y mostrarlas en la tabla
-    function loadReservations() {
-      fetch('/admin/reservations', { headers: { "Authorization": authHeader } })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error("Error de autenticación o problema en la solicitud");
-          }
-          return response.json();
-        })
-        .then(data => {
-          const tableBody = document.getElementById("reservationsTable");
-          tableBody.innerHTML = ""; // Limpiar tabla
-          data.forEach(reservation => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-              <td>${reservation._id}</td>
-              <td>${reservation.spaceId}</td>
-              <td>${new Date(reservation.date).toLocaleDateString()}</td>
-              <td>${reservation.turn}</td>
-              <td>${reservation.user}</td>
-              <td>
-                <button class="btn btn-sm btn-primary" onclick="editReservation('${reservation._id}')">Editar</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteReservation('${reservation._id}')">Borrar</button>
-              </td>
-            `;
-            tableBody.appendChild(tr);
-          });
-        })
-        .catch(error => alert("Error al obtener las reservas: " + error.message));
+    function login() {
+      const username = document.getElementById("adminUser").value.trim();
+      const password = document.getElementById("adminPassword").value.trim();
+
+      if (!username || !password) {
+        alert("Por favor, introduce usuario y contraseña.");
+        return;
+      }
+
+      sessionStorage.setItem("authHeader", "Basic " + btoa(username + ":" + password));
+
+      document.getElementById("loginContainer").style.display = "none";
+      document.getElementById("reservationsContainer").style.display = "block";
+      loadReservations();
     }
-    
-    // Llamada inicial para cargar reservas
-    loadReservations();
-    
-    // Función para borrar una reserva
-    function deleteReservation(id) {
-      if (!confirm("¿Estás seguro de que deseas borrar esta reserva?")) return;
-      
-      fetch(`/api/reservations/${id}`, {
-        method: 'DELETE',
+
+    function loadReservations() {
+      const authHeader = sessionStorage.getItem("authHeader");
+
+      if (!authHeader) {
+        alert("Debes iniciar sesión.");
+        return;
+      }
+
+      fetch('/admin/reservations', {
         headers: { "Authorization": authHeader }
       })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Error de autenticación o problema en la solicitud");
+        }
+        return response.json();
+      })
       .then(data => {
-        alert(data.message || "Reserva borrada");
-        loadReservations(); // Recargar la lista
+        const tableBody = document.getElementById("reservationsTable");
+        tableBody.innerHTML = ""; 
+        data.forEach(reservation => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${reservation._id}</td>
+            <td>${reservation.spaceId}</td>
+            <td data-date="${reservation.date}">${new Date(reservation.date).toLocaleDateString()}</td>
+            <td>${reservation.turno}</td>
+            <td>${reservation.user}</td>
+            <td>
+              <button class="btn btn-sm btn-primary" onclick="editReservation('${reservation._id}')">Editar</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteReservation('${reservation._id}')">Borrar</button>
+            </td>
+          `;
+          tableBody.appendChild(tr);
+        });
       })
-      .catch(error => alert("Error al borrar la reserva: " + error.message));
-    }
-    
-    // Función para editar una reserva
-    function editReservation(id) {
-      // Se solicitan nuevos valores mediante prompt; en una app real usarías un formulario o modal.
-      const newSpaceId = prompt("Nuevo Spot (1-6):");
-      const newDate = prompt("Nueva Fecha (YYYY-MM-DD):");
-      const newTurn = prompt("Nuevo Turno (mañana/tarde):");
-      const newUser = prompt("Nuevo Usuario:");
-      
-      // Construir objeto de actualización; solo se envían los campos que el usuario complete.
-      const updateData = {};
-      if (newSpaceId) updateData.spaceId = newSpaceId;
-      if (newDate) updateData.date = newDate;
-      if (newTurn) updateData.turn = newTurn;
-      if (newUser) updateData.user = newUser;
-      
-      fetch(`/api/reservations/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          "Authorization": authHeader
-        },
-        body: JSON.stringify(updateData)
-      })
-      .then(response => response.json())
-      .then(data => {
-        alert(data.message || "Reserva actualizada");
-        loadReservations(); // Recargar la lista
-      })
-      .catch(error => alert("Error al editar la reserva: " + error.message));
+      .catch(error => alert("Error al obtener las reservas: " + error.message));
     }
   </script>
 </body>
